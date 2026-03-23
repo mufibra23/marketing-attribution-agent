@@ -103,7 +103,7 @@ def run_all_models(df):
         shapley_raw if has_shapley else None
     )
 
-    print("\n✅ All models complete!")
+    print("\n[OK] All models complete!")
 
     return {
         "results": comparison,
@@ -115,45 +115,35 @@ def run_all_models(df):
 def extract_attribution_from_result(raw_tuple, model_name):
     """
     Extract per-channel attribution from a MAM result tuple.
-    
-    MAM returns tuples where [0] is either a DataFrame or Series.
-    DataFrames may have list-type columns — we need the scalar attribution column.
+
+    MAM returns tuples where:
+      [0] = per-journey results (one row per journey — NOT what we want)
+      [1] = per-channel aggregated attribution (one row per channel)
+    For rule-based models, [1] is a Series with channel names as index.
+    For Markov, [1] is a DataFrame with 'channels' and attribution columns.
     """
-    result = raw_tuple[0]
+    result = raw_tuple[1]
 
     if isinstance(result, pd.Series):
-        # Check if values are scalars or lists
-        first_val = result.values[0]
-        if isinstance(first_val, (list, np.ndarray)):
-            # Take first element of each list (usually the conversion count)
-            values = [v[0] if isinstance(v, (list, np.ndarray)) else v for v in result.values]
-        else:
-            values = result.values.tolist()
-
         return pd.DataFrame({
             "channel": [str(x) for x in result.index],
-            model_name: [float(x) for x in values],
+            model_name: [float(x) for x in result.values],
         })
 
     if isinstance(result, pd.DataFrame):
-        # Find channel column
+        # Find channel column (usually 'channels')
         channel_col = result.columns[0]
 
-        # Find the best value column — must be numeric scalars, not lists
+        # Find the best numeric value column
         value_col = None
         for col in result.columns[1:]:
             sample_val = result[col].iloc[0]
             if isinstance(sample_val, (int, float, np.integer, np.floating)):
-                # Prefer columns with 'attribution' in name
                 if value_col is None or "attribution" in str(col).lower():
                     value_col = col
 
         if value_col is None:
             print(f"  Warning: No scalar numeric column found for {model_name}")
-            print(f"  Columns and types:")
-            for col in result.columns:
-                sample = result[col].iloc[0]
-                print(f"    {col}: {type(sample).__name__} = {sample}")
             return None
 
         out = result[[channel_col, value_col]].copy()
@@ -284,4 +274,4 @@ if __name__ == "__main__":
         print("\n--- Markov Transition Matrix ---")
         print(output["markov_transition_matrix"].round(3))
 
-    print(f"\n✅ {len(output['model_names'])} models ran successfully: {output['model_names']}")
+    print(f"\n[OK] {len(output['model_names'])} models ran successfully: {output['model_names']}")

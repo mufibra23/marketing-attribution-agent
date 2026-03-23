@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python src/agent/graph.py)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(PYTHONIOENCODING=utf-8 echo \"Analyze my marketing attribution data and give me actionable insights\")"
+    ]
+  }
+}
