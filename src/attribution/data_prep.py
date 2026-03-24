@@ -15,7 +15,16 @@ from config import GCP_PROJECT, GA4_DATASET, CHANNEL_MAPPING, DEFAULT_CHANNEL, M
 
 
 def get_bigquery_client():
-    """Create BigQuery client using project credentials."""
+    """Create BigQuery client. Uses st.secrets on Streamlit Cloud, default credentials locally."""
+    try:
+        import streamlit as st
+        if "gcp_service_account" in st.secrets:
+            from google.oauth2.service_account import Credentials
+            creds = Credentials.from_service_account_info(dict(st.secrets["gcp_service_account"]))
+            project = st.secrets.get("GOOGLE_CLOUD_PROJECT", GCP_PROJECT)
+            return bigquery.Client(project=project, credentials=creds)
+    except Exception:
+        pass
     return bigquery.Client(project=GCP_PROJECT)
 
 
