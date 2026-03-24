@@ -45,10 +45,13 @@ def run_models(_df):
     return run_all_models(_df)
 
 
-@st.cache_data(show_spinner="Running LSTM deep learning attribution...")
-def run_lstm(_df):
-    from deep_learning.attribution import run_lstm_attribution_pipeline
-    return run_lstm_attribution_pipeline(_df)
+@st.cache_data(show_spinner="Loading LSTM attribution results...")
+def load_lstm_results():
+    """Load pre-computed LSTM attribution from CSV (no TensorFlow needed)."""
+    csv_path = os.path.join(os.path.dirname(__file__), "data", "lstm_results.csv")
+    if not os.path.exists(csv_path):
+        return None
+    return pd.read_csv(csv_path)
 
 
 def get_data():
@@ -347,16 +350,10 @@ def tab_lstm(df):
     st.header("LSTM Deep Learning Attribution")
     st.caption("Gradient-based attribution from a trained LSTM conversion prediction model")
 
-    model_path = os.path.join("models", "lstm_attribution.keras")
-    if not os.path.exists(model_path):
-        st.warning("No trained LSTM model found. Run `python src/deep_learning/train.py` first.")
-        st.code("python src/deep_learning/train.py", language="bash")
-        return
-
-    try:
-        lstm_df = run_lstm(df)
-    except Exception as e:
-        st.error(f"LSTM attribution failed: {e}")
+    lstm_df = load_lstm_results()
+    if lstm_df is None:
+        st.warning("No pre-computed LSTM results found. Run locally and commit `data/lstm_results.csv`.")
+        st.code("python src/deep_learning/train.py\npython -c \"\nimport sys; sys.path.insert(0,'src')\nfrom attribution.data_prep import extract_journeys\nfrom deep_learning.attribution import run_lstm_attribution_pipeline\ndf = extract_journeys()\nresult = run_lstm_attribution_pipeline(df)\nresult.to_csv('data/lstm_results.csv', index=False)\n\"", language="bash")
         return
 
     st.session_state.lstm_attribution = lstm_df

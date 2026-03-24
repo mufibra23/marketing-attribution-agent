@@ -98,23 +98,25 @@ def precompute_attribution():
                 for col in tm.columns:
                     lines.append(f"  {idx}: {row[col]:.3f}")
 
-    # LSTM deep learning attribution
-    try:
-        from deep_learning.attribution import run_lstm_attribution_pipeline
-        print("  Running LSTM deep learning attribution...")
-        lstm_df = run_lstm_attribution_pipeline(df)
+    # LSTM deep learning attribution (from pre-computed CSV)
+    import pandas as pd
+    csv_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "lstm_results.csv")
+    if _cache.get("lstm_attribution") is not None:
+        lstm_df = _cache["lstm_attribution"]
+    elif os.path.exists(csv_path):
+        lstm_df = pd.read_csv(csv_path)
         _cache["lstm_attribution"] = lstm_df
+    else:
+        lstm_df = None
 
+    if lstm_df is not None:
         lines.append("")
         lines.append("LSTM DEEP LEARNING ATTRIBUTION (gradient-based, from converting journeys):")
         for _, row in lstm_df.iterrows():
             lines.append(f"  {row['channel']:<20} {row['lstm_deep_learning']*100:5.1f}%")
-    except FileNotFoundError:
+    else:
         lines.append("")
-        lines.append("LSTM MODEL: Not trained yet. Run 'python src/deep_learning/train.py' to enable.")
-    except Exception as e:
-        lines.append("")
-        lines.append(f"LSTM MODEL: Error — {e}")
+        lines.append("LSTM MODEL: No pre-computed results. Run training locally.")
 
     return "\n".join(lines)
 

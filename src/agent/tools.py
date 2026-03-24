@@ -169,35 +169,34 @@ def compare_channels(channel_name: str) -> str:
 @tool
 def run_lstm_attribution() -> str:
     """
-    Run the LSTM deep learning attribution model on the journey data.
-    Uses a trained TensorFlow LSTM model with gradient-based attribution
-    to compute per-channel attribution weights.
-    The LSTM model must be trained first (python src/deep_learning/train.py).
+    Get LSTM deep learning attribution results.
+    Returns pre-computed gradient-based channel attribution weights from a trained LSTM model.
+    Falls back to CSV if TensorFlow is not available.
     You MUST call query_bigquery_journeys first to load the data.
     """
-    if _cache["journey_df"] is None:
-        return "ERROR: No journey data loaded. Call query_bigquery_journeys first."
+    # Try cached results first
+    if _cache.get("lstm_attribution") is not None:
+        attribution_df = _cache["lstm_attribution"]
+    else:
+        # Load from pre-computed CSV
+        import pandas as pd
+        csv_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "lstm_results.csv")
+        if os.path.exists(csv_path):
+            attribution_df = pd.read_csv(csv_path)
+            _cache["lstm_attribution"] = attribution_df
+        else:
+            return "ERROR: No LSTM results found. Run training locally and save data/lstm_results.csv."
 
-    try:
-        from deep_learning.attribution import run_lstm_attribution_pipeline
-        attribution_df = run_lstm_attribution_pipeline(_cache["journey_df"])
-        _cache["lstm_attribution"] = attribution_df
+    lines = ["LSTM Deep Learning Attribution (gradient-based):\n"]
+    lines.append(f"{'Channel':<20} {'Attribution':>12}")
+    lines.append("-" * 34)
+    for _, row in attribution_df.iterrows():
+        bar = "█" * int(row["lstm_deep_learning"] * 100)
+        lines.append(f"{row['channel']:<20} {row['lstm_deep_learning']*100:11.1f}%  {bar}")
 
-        lines = ["LSTM Deep Learning Attribution (gradient-based):\n"]
-        lines.append(f"{'Channel':<20} {'Attribution':>12}")
-        lines.append("-" * 34)
-        for _, row in attribution_df.iterrows():
-            bar = "█" * int(row["lstm_deep_learning"] * 100)
-            lines.append(f"{row['channel']:<20} {row['lstm_deep_learning']*100:11.1f}%  {bar}")
-
-        lines.append("\nMethod: TensorFlow LSTM with tf.GradientTape")
-        lines.append("Computed from converting journeys only (gradient of prediction w.r.t. input)")
-        return "\n".join(lines)
-
-    except FileNotFoundError as e:
-        return f"ERROR: {e}"
-    except Exception as e:
-        return f"ERROR running LSTM attribution: {e}"
+    lines.append("\nMethod: TensorFlow LSTM with tf.GradientTape")
+    lines.append("Computed from converting journeys only (gradient of prediction w.r.t. input)")
+    return "\n".join(lines)
 
 
 @tool

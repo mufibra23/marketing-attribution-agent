@@ -11,5 +11,3 @@ plotly>=6.0,<7
 python-dotenv>=1.0,<2
 scikit-learn>=1.5,<2
 streamlit>=1.40,<2
-tensorflow>=2.18,<3
-keras>=3.7,<4

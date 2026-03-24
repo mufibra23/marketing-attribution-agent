@@ -1,0 +1,5 @@
+# Local-only dependencies (LSTM training requires TensorFlow)
+# Not needed for Streamlit Cloud deployment
+-r requirements.txt
+tensorflow>=2.18,<3
+keras>=3.7,<4
