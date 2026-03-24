@@ -31,24 +31,34 @@ st.set_page_config(
 
 
 # ---------------------------------------------------------------------------
-# Data loading (cached)
+# Data loading (cached) — prefers local CSVs, falls back to BigQuery/MAM
 # ---------------------------------------------------------------------------
-@st.cache_data(show_spinner="Loading journey data from BigQuery...")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
+
+@st.cache_data(show_spinner="Loading journey data...")
 def load_journey_data():
+    csv_path = os.path.join(DATA_DIR, "journey_data.csv")
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)
+        df["channel_list"] = df["channel_list"].apply(lambda x: x.split("|"))
+        return df
     from attribution.data_prep import extract_journeys
     return extract_journeys()
 
 
-@st.cache_data(show_spinner="Running 7 attribution models...")
+@st.cache_data(show_spinner="Loading attribution results...")
 def run_models(_df):
+    csv_path = os.path.join(DATA_DIR, "attribution_results.csv")
+    if os.path.exists(csv_path):
+        return {"results": pd.read_csv(csv_path)}
     from attribution.models import run_all_models
     return run_all_models(_df)
 
 
 @st.cache_data(show_spinner="Loading LSTM attribution results...")
 def load_lstm_results():
-    """Load pre-computed LSTM attribution from CSV (no TensorFlow needed)."""
-    csv_path = os.path.join(os.path.dirname(__file__), "data", "lstm_results.csv")
+    csv_path = os.path.join(DATA_DIR, "lstm_results.csv")
     if not os.path.exists(csv_path):
         return None
     return pd.read_csv(csv_path)

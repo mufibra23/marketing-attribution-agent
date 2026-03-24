@@ -5,7 +5,6 @@ langchain-google-genai>=4.2,<5
 langgraph>=1.1,<2
 langgraph-checkpoint>=4.0,<5
 langgraph-prebuilt>=1.0,<2
-marketing-attribution-models>=1.0,<2
 numpy>=2.0,<3
 pandas>=2.2,<3
 plotly>=6.0,<7

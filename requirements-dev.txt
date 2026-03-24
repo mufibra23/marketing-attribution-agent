@@ -1,5 +1,6 @@
-# Local-only dependencies (LSTM training requires TensorFlow)
-# Not needed for Streamlit Cloud deployment
+# Local-only dependencies (training + model computation)
+# Not needed for Streamlit Cloud deployment (app loads pre-computed CSVs)
 -r requirements.txt
+marketing-attribution-models>=1.0,<2
 tensorflow>=2.18,<3
 keras>=3.7,<4
