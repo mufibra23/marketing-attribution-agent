@@ -1,0 +1,15 @@
+google-cloud-bigquery==3.40.1
+langchain-core==1.2.20
+langchain-google-genai==4.2.1
+langgraph==1.1.3
+langgraph-checkpoint==4.0.1
+langgraph-prebuilt==1.0.8
+marketing-attribution-models==1.0.10
+numpy==2.4.3
+pandas==2.3.3
+plotly==6.6.0
+python-dotenv==1.2.1
+scikit-learn==1.8.0
+streamlit==1.55.0
+tensorflow==2.21.0
+keras==3.13.2

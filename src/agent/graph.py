@@ -25,11 +25,12 @@ from config import GOOGLE_API_KEY
 from agent.state import AttributionState
 from agent.tools import ALL_TOOLS, _cache
 
-SYSTEM_PROMPT = """You are a Marketing Attribution Analyst agent. You help marketers understand which marketing channels truly drive conversions by comparing multiple attribution models.
+SYSTEM_PROMPT = """You are a Marketing Attribution Analyst agent. You help marketers understand which marketing channels truly drive conversions by comparing multiple attribution models (7 statistical + 1 LSTM deep learning).
 
 You have access to these tools for follow-up questions:
 1. compare_channels — Deep dive into a specific channel's attribution across all models
 2. get_budget_recommendation — Generate budget reallocation advice
+3. run_lstm_attribution — Run LSTM deep learning attribution (gradient-based)
 
 When analyzing attribution data provided to you:
 - Explain results in business terms, not technical jargon
@@ -41,7 +42,7 @@ IMPORTANT: This uses the GA4 sample ecommerce dataset (demo data from Google). A
 
 Be concise but insightful. Lead with the business insight, then support with data."""
 
-FOLLOWUP_TOOLS = [t for t in ALL_TOOLS if t.name in ("compare_channels", "get_budget_recommendation")]
+FOLLOWUP_TOOLS = [t for t in ALL_TOOLS if t.name in ("compare_channels", "get_budget_recommendation", "run_lstm_attribution")]
 
 
 def precompute_attribution():
@@ -96,6 +97,24 @@ def precompute_attribution():
             for idx, row in tm.iterrows():
                 for col in tm.columns:
                     lines.append(f"  {idx}: {row[col]:.3f}")
+
+    # LSTM deep learning attribution
+    try:
+        from deep_learning.attribution import run_lstm_attribution_pipeline
+        print("  Running LSTM deep learning attribution...")
+        lstm_df = run_lstm_attribution_pipeline(df)
+        _cache["lstm_attribution"] = lstm_df
+
+        lines.append("")
+        lines.append("LSTM DEEP LEARNING ATTRIBUTION (gradient-based, from converting journeys):")
+        for _, row in lstm_df.iterrows():
+            lines.append(f"  {row['channel']:<20} {row['lstm_deep_learning']*100:5.1f}%")
+    except FileNotFoundError:
+        lines.append("")
+        lines.append("LSTM MODEL: Not trained yet. Run 'python src/deep_learning/train.py' to enable.")
+    except Exception as e:
+        lines.append("")
+        lines.append(f"LSTM MODEL: Error — {e}")
 
     return "\n".join(lines)
 

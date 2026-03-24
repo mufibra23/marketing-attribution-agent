@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 _cache = {
     "journey_df": None,
     "attribution_output": None,
+    "lstm_attribution": None,
 }
 
 
@@ -166,6 +167,40 @@ def compare_channels(channel_name: str) -> str:
 
 
 @tool
+def run_lstm_attribution() -> str:
+    """
+    Run the LSTM deep learning attribution model on the journey data.
+    Uses a trained TensorFlow LSTM model with gradient-based attribution
+    to compute per-channel attribution weights.
+    The LSTM model must be trained first (python src/deep_learning/train.py).
+    You MUST call query_bigquery_journeys first to load the data.
+    """
+    if _cache["journey_df"] is None:
+        return "ERROR: No journey data loaded. Call query_bigquery_journeys first."
+
+    try:
+        from deep_learning.attribution import run_lstm_attribution_pipeline
+        attribution_df = run_lstm_attribution_pipeline(_cache["journey_df"])
+        _cache["lstm_attribution"] = attribution_df
+
+        lines = ["LSTM Deep Learning Attribution (gradient-based):\n"]
+        lines.append(f"{'Channel':<20} {'Attribution':>12}")
+        lines.append("-" * 34)
+        for _, row in attribution_df.iterrows():
+            bar = "█" * int(row["lstm_deep_learning"] * 100)
+            lines.append(f"{row['channel']:<20} {row['lstm_deep_learning']*100:11.1f}%  {bar}")
+
+        lines.append("\nMethod: TensorFlow LSTM with tf.GradientTape")
+        lines.append("Computed from converting journeys only (gradient of prediction w.r.t. input)")
+        return "\n".join(lines)
+
+    except FileNotFoundError as e:
+        return f"ERROR: {e}"
+    except Exception as e:
+        return f"ERROR running LSTM attribution: {e}"
+
+
+@tool
 def get_budget_recommendation() -> str:
     """
     Generate a budget reallocation recommendation based on Markov chain attribution.
@@ -221,6 +256,7 @@ def get_budget_recommendation() -> str:
 ALL_TOOLS = [
     query_bigquery_journeys,
     run_attribution_models,
+    run_lstm_attribution,
     compare_channels,
     get_budget_recommendation,
 ]
