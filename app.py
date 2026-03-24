@@ -205,20 +205,29 @@ def tab_attribution(output):
 
     with col_r:
         # Radar chart for all channels
-        fig = go.Figure()
-        channels = comparison["channel"].tolist()
-        for model in model_cols:
-            vals = (comparison[model] * 100).tolist()
-            fig.add_trace(go.Scatterpolar(
-                r=vals + [vals[0]],
-                theta=channels + [channels[0]],
-                name=model,
-            ))
-        fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True, suffix="%")),
-            title="Radar: Model Agreement per Channel",
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        try:
+            fig = go.Figure()
+            channels = comparison["channel"].tolist()
+            for model in model_cols:
+                vals = (comparison[model] * 100).tolist()
+                fig.add_trace(go.Scatterpolar(
+                    r=vals + [vals[0]],
+                    theta=channels + [channels[0]],
+                    name=model,
+                    fill="toself",
+                    opacity=0.6,
+                ))
+            fig.update_layout(
+                title="Radar: Model Agreement per Channel",
+                polar_radialaxis_visible=True,
+                polar_radialaxis_suffix="%",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception:
+            st.subheader("Model Agreement per Channel")
+            radar_df = comparison.set_index("channel")[model_cols] * 100
+            radar_df = radar_df.round(1).astype(str) + "%"
+            st.dataframe(radar_df, use_container_width=True)
 
     # Comparison table
     st.subheader("Full Results Table")

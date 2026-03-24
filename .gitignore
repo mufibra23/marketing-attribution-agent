@@ -5,3 +5,6 @@ __pycache__/
 models/
 .streamlit/secrets.toml
 .claude/
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
